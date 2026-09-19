@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1082197860880",
+    "project_id": "hustlehub-74a09",
+    "storage_bucket": "hustlehub-74a09.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082197860880:android:7b2532893d1a212b5fa095",
+        "android_client_info": {
+          "package_name": "com.wasama.hustlehub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAM5hhUXI3efL4eD3BsxK-owAS1H74Cass"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
