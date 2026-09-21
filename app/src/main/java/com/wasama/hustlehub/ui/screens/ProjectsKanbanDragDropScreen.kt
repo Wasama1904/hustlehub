@@ -19,13 +19,14 @@ import androidx.navigation.NavController
 import com.wasama.hustlehub.data.local.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsKanbanDragDropScreen(nav: NavController) {
     val context = LocalContext.current
     val db = remember { HustleHubDatabase.get(context) }
     val scope = rememberCoroutineScope()
 
-    var projects by remember { mutableStateOf(
+    var projects by remember { mutableStateOf<List<KanbanProject>>(
         listOf(
             KanbanProject("1","Logo Redesign","Acme", ProjectStatus.PROPOSED, 5000.0, "USD 275 -> R5000"),
             KanbanProject("2","Website Build","TechStart", ProjectStatus.IN_PROGRESS, 12000.0, "USD 650 -> R12000"),
@@ -153,3 +154,12 @@ fun ProjectsKanbanDragDropScreen(nav: NavController) {
         )
     }
 }
+
+data class KanbanProject(
+    val id: String,
+    val title: String,
+    val client: String,
+    val status: ProjectStatus,
+    val budgetZAR: Double,
+    val usdConverted: String
+)
