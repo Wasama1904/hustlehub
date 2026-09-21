@@ -15,14 +15,6 @@ import androidx.navigation.NavController
 fun DashboardScreen(nav: NavController) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("HustleHub Dashboard") }, actions = { IconButton(onClick = { nav.navigate("settings") }) { Icon(Icons.Default.Settings, null) } }) },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(selected = true, onClick = {}, label = { Text("Dash") }, icon = {})
-                NavigationBarItem(selected = false, onClick = { nav.navigate("clients") }, label = { Text("Clients") }, icon = {})
-                NavigationBarItem(selected = false, onClick = { nav.navigate("projects") }, label = { Text("Projects") }, icon = {})
-                NavigationBarItem(selected = false, onClick = { nav.navigate("stats") }, label = { Text("Stats") }, icon = {})
-            }
-        },
         floatingActionButton = { FloatingActionButton(onClick = { nav.navigate("timer/new") }) { Text("+ Timer") } }
     ) { pad ->
         LazyColumn(Modifier.padding(pad).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
