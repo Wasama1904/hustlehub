@@ -11,9 +11,9 @@ private val LightBg = Color(0xFFF8FAF8)
 private val LightScheme = lightColorScheme(
     primary = Charcoal,
     secondary = Teal,
-    background = LightBg,
-    surface = Color.White,
-    onPrimary = Color.White
+    background = Color.Cyan,
+    surface = Color.Cyan,
+    onPrimary = Color.Black
 )
 
 @Composable
