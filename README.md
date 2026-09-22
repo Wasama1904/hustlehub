@@ -18,37 +18,21 @@ HustleHub is an offline-first, ZAR-friendly freelance business manager built for
 
 ## 📸 Screenshots
 
-> **Replace these placeholders with your actual screenshots. Name them exactly as below for auto-display.**
-
-| Login & Register | Dashboard (Hustle) | Kanban Board |
-| :---: | :---: | :---: |
-| [Login](screenshots/login.png) | [Dashboard](screenshots/dashboard.png) | [Kanban](screenshots/kanban.png) |
-| Encrypted Auth | Real-time Stats: Unpaid/Overdue/Active | Deadline + Description + 10 Tasks |
-
-| Client Management | Project Detail | Timer & Invoice |
-| :---: | :---: | :---: |
-| [Clients](screenshots/clients.png) | [Project Detail](screenshots/project_detail.png) | [Invoice](screenshots/invoice.png) |
-| Phone + Call Intent | Description + Tasks Checklist + XP | Foreground Service + PDF Generation |
-
-| Growth & Badges | Settings | Dark Theme |
-| :---: | :---: | :---: |
-| [Badges](screenshots/badges.png) | [Settings](screenshots/settings.png) | [Dark](screenshots/dark_theme.png) |
-| Level, XP, Streak Freeze | Hourly Rate, Currency, Offline Sync | Charcoal #0A0A0A + Teal #2DD4BF |
+| Login & Register | Dashboard & Kanban | Clients & Settings | Growth & Badges |
+| :---: | :---: | :---: | :---: |
+| ![Login](screenshots/login.png.png) | ![Dashboard](screenshots/dashboard.png.png) | ![Clients](screenshots/clients.png.png) | ![Badges](screenshots/badges.png.png) |
+| ![Register](screenshots/register.png.png) | ![Kanban](screenshots/kanban.png.png) | ![Settings](screenshots/settings.png.png) | |
 
 **Folder structure for screenshots:**
 ```
 /screenshots
-  - login.png
-  - register.png
-  - dashboard.png
-  - kanban.png
-  - clients.png
-  - project_detail.png
-  - timer.png
-  - invoice.png
-  - badges.png
-  - settings.png
-  - dark_theme.png
+  - login.png.png
+  - register.png.png
+  - dashboard.png.png
+  - kanban.png.png
+  - clients.png.png
+  - settings.png.png
+  - badges.png.png
 ```
 
 ---
