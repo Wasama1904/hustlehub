@@ -50,12 +50,14 @@ fun AppScaffold() {
             }
         }
     ) { pad ->
-        NavHost(navController = nav, startDestination = "dashboard", modifier = Modifier.padding(pad)) {
+        NavHost(navController = nav, startDestination = "login", modifier = Modifier.padding(pad)) {
+            composable("login") { LoginScreen(onLogin = { nav.navigate("dashboard") { popUpTo("login") { inclusive = true } } }, onNavigateToRegister = { nav.navigate("register") }) }
+            composable("register") { RegisterScreen(onRegistered = { nav.navigate("dashboard") { popUpTo("register") { inclusive = true } } }, onNavigateToLogin = { nav.popBackStack() }) }
             composable("dashboard") { DashboardScreenFixed(nav) }
-            composable("clients") { ClientsScreenFixed(nav) }
-            composable("projects") { ProjectsKanbanDragDropScreen(nav) }
+            composable("clients") { ClientsScreen(nav) }
+            composable("projects") { ProjectsKanbanScreen(nav) }
             composable("stats") { BadgesScreenCool(nav) }
-            composable("projectDetail/{id}") { ProjectDetailFixed(it.arguments?.getString("id") ?: "", nav) }
+            composable("projectDetail/{id}") { ProjectDetailScreen(it.arguments?.getString("id") ?: "", nav) }
             composable("timer/{id}") { TimerScreenFixed(it.arguments?.getString("id") ?: "", nav) }
             composable("invoice/{id}") { InvoiceScreenFixed(it.arguments?.getString("id") ?: "", nav) }
             composable("settings") { SettingsScreenFixed(nav) }

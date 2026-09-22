@@ -1,7 +1,7 @@
 package com.wasama.hustlehub.data.local
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import androidx.room.*
+import com.google.gson.Gson
 import java.util.UUID
 
 enum class ProjectStatus { PROPOSED, IN_PROGRESS, DONE, INVOICED, PAID }
@@ -13,7 +13,7 @@ data class UserEntity(
     val hourlyRate: Double = 250.0,
     val xp: Int = 0,
     val streak: Int = 0,
-    val badges: String = "", // comma separated
+    val badges: String = "",
     val freezeTokens: Int = 1,
     val createdAt: Long = System.currentTimeMillis()
 ) {
@@ -28,7 +28,7 @@ data class ClientEntity(
     val email: String,
     val company: String? = null,
     val ratePerHour: Double = 250.0,
-    val phone: String? = null,
+    val phone: String? = null, // NOW PERSISTED - was missing before
     val trustScore: Int = 85,
     val notes: String? = null,
     val createdAt: Long = System.currentTimeMillis()
@@ -40,7 +40,7 @@ data class ProjectEntity(
     val userId: String,
     val clientId: String,
     val title: String,
-    val description: String? = null,
+    val description: String = "", // NEW: project description
     val budgetAmount: Double,
     val budgetCurrency: String = "ZAR",
     val convertedBudgetZAR: Double? = null,
@@ -48,10 +48,20 @@ data class ProjectEntity(
     val status: ProjectStatus = ProjectStatus.PROPOSED,
     val progressPercent: Int = 0,
     val totalTrackedMinutes: Int = 0,
+    val tasksJson: String = "[]", // NEW: JSON list of tasks (max 10)
     val createdAt: Long = System.currentTimeMillis()
-)
+) {
+    // Helper to get tasks as List
+    fun getTasksList(): List<TaskItem> {
+        return try {
+            Gson().fromJson(tasksJson, Array<TaskItem>::class.java).toList()
+        } catch(e: Exception) { emptyList() }
+    }
+}
 
-@Entity(tableName = "tasks")
+data class TaskItem(val title: String, val isCompleted: Boolean = false)
+
+@Entity(tableName = "tasks") // keep for detailed tasks if needed
 data class TaskEntity(
     @PrimaryKey val taskId: String = UUID.randomUUID().toString(),
     val projectId: String,

@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
+    implementation("com.google.code.gson:gson:2.10.1")
 
     testImplementation(libs.junit)
     testImplementation(libs.androidx.room.testing)
