@@ -1,5 +1,6 @@
 package com.wasama.hustlehub.ui.screens
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,118 +13,127 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.wasama.hustlehub.data.local.ProjectStatus
-import java.util.UUID
-
-data class ProjectFull(
-    val id: String = UUID.randomUUID().toString(),
-    val title: String,
-    val client: String,
-    val description: String = "",
-    var status: ProjectStatus = ProjectStatus.PROPOSED,
-    val budgetZAR: Double = 5000.0,
-    val usdConverted: String = "USD 275 -> R5000",
-    val tasks: List<String> = emptyList(),
-    val deadline: String = "2d left"
-)
+import com.google.gson.Gson
+import com.wasama.hustlehub.data.local.*
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsKanbanScreen(nav: NavController) {
-    var projects by remember { mutableStateOf(listOf(
-        ProjectFull(title="Logo Redesign", client="Acme", description="Redesign logo for Acme's new brand identity including color palette and typography.", status=ProjectStatus.PROPOSED, tasks=listOf("Moodboard","Draft 1","Client review","Final export","Brand guide")),
-        ProjectFull(title="Social Kit", client="TechStart", description="Create social media kit with 20 templates for Instagram and LinkedIn.", status=ProjectStatus.PROPOSED, tasks=listOf("Research","Templates","Review")),
-        ProjectFull(title="Website Build", client="TechStart", description="Build responsive landing page with CMS.", status=ProjectStatus.IN_PROGRESS, budgetZAR=12000.0, usdConverted="USD 650 -> R12000")
-    )) }
-
+    val context = LocalContext.current
+    val db = remember { HustleHubDatabase.get(context) }
+    val scope = rememberCoroutineScope()
+    var projects by remember { mutableStateOf<List<ProjectEntity>>(emptyList()) }
     var showAdd by remember { mutableStateOf(false) }
 
-    // Add Project Dialog with description + 10 tasks
+    LaunchedEffect(Unit) {
+        try {
+            db.projectDao().getProjects("current_user").collect { list ->
+                if (list.isEmpty()) {
+                    val now = System.currentTimeMillis()
+                    val demo = listOf(
+                        ProjectEntity(title="Logo Redesign", description="Redesign logo", deadlineTimestamp=now+2*24*60*60*1000L, budgetAmount=5000.0),
+                        ProjectEntity(title="Website Build", description="Landing page", deadlineTimestamp=now-1*24*60*60*1000L, budgetAmount=12000.0, status=ProjectStatus.IN_PROGRESS),
+                        ProjectEntity(title="Social Kit", description="20 templates", deadlineTimestamp=now+5*24*60*60*1000L, budgetAmount=1500.0)
+                    )
+                    demo.forEach { db.projectDao().insert(it) }
+                } else {
+                    projects = list
+                }
+            }
+        } catch (e: Exception) { }
+    }
+
     if (showAdd) {
         var title by remember { mutableStateOf("") }
-        var client by remember { mutableStateOf("") }
-        var description by remember { mutableStateOf("") }
-        var tasksText by remember { mutableStateOf("") } // comma or newline separated
+        var desc by remember { mutableStateOf("") }
+        var tasksText by remember { mutableStateOf("") }
+        var deadline by remember { mutableStateOf(System.currentTimeMillis() + 2*24*60*60*1000L) }
+        var showDatePicker by remember { mutableStateOf(false) }
+
+        if (showDatePicker) {
+            val cal = Calendar.getInstance().apply { timeInMillis = deadline }
+            DatePickerDialog(context, { _, y, m, d ->
+                val c = Calendar.getInstance().apply { set(y,m,d) }
+                deadline = c.timeInMillis
+                showDatePicker = false
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+            LaunchedEffect(Unit) { showDatePicker = false }
+        }
 
         AlertDialog(
             onDismissRequest = { showAdd = false },
-            title = { Text("Add Project") },
+            title = { Text("Add Project with Deadline") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title *") }, singleLine = true)
-                    OutlinedTextField(value = client, onValueChange = { client = it }, label = { Text("Client") }, singleLine = true)
-                    OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, minLines = 3, maxLines = 5, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = tasksText, onValueChange = { tasksText = it }, label = { Text("Tasks (max 10, one per line)") }, placeholder = { Text("e.g.\nDesign draft\nReview\nExport") }, minLines = 4, maxLines = 10, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value=title, onValueChange={title=it}, label={Text("Title*")}, singleLine=true, modifier=Modifier.fillMaxWidth())
+                    OutlinedTextField(value=desc, onValueChange={desc=it}, label={Text("Description")}, minLines=2, modifier=Modifier.fillMaxWidth())
+                    OutlinedTextField(value=tasksText, onValueChange={tasksText=it}, label={Text("Tasks (max 10, one per line)")}, minLines=3, modifier=Modifier.fillMaxWidth())
+                    Button(onClick={ showDatePicker = true }, modifier=Modifier.fillMaxWidth()) {
+                        val fmt = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                        Text("Deadline: ${fmt.format(Date(deadline))} (${daysLeftText(deadline)})")
+                    }
+                    Text("Overdue is calculated from this date. If deadline < now, counts as overdue on dashboard.", style=MaterialTheme.typography.labelSmall)
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    val taskList = tasksText.lines().map { it.trim() }.filter { it.isNotBlank() }.take(10)
-                    if (title.isBlank()) return@Button
-                    projects = projects + ProjectFull(title=title, client=client, description=description, tasks=taskList)
+                Button(onClick={
+                    if(title.isBlank()) return@Button
+                    val taskList = tasksText.lines().filter{it.isNotBlank()}.take(10).map{ TaskItem(it) }
+                    val json = Gson().toJson(taskList)
+                    val newProj = ProjectEntity(title=title, description=desc, deadlineTimestamp=deadline, tasksJson=json, budgetAmount=5000.0)
+                    scope.launch {
+                        try {
+                            db.projectDao().insert(newProj)
+                        } catch(_: Exception) {}
+                    }
                     showAdd = false
-                }) { Text("Add") }
+                }){ Text("Add") }
             },
-            dismissButton = { TextButton(onClick = { showAdd = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick={showAdd=false}){ Text("Cancel") } }
         )
     }
 
     val columns = listOf(ProjectStatus.PROPOSED, ProjectStatus.IN_PROGRESS, ProjectStatus.DONE, ProjectStatus.INVOICED, ProjectStatus.PAID)
 
-    Scaffold(floatingActionButton = { FloatingActionButton(onClick = { showAdd = true }, containerColor = MaterialTheme.colorScheme.secondaryContainer) { Icon(Icons.Default.Add, null) } }) { pad ->
-        LazyRow(Modifier.fillMaxSize().padding(pad).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    Scaffold(floatingActionButton={ FloatingActionButton(onClick={showAdd=true}, containerColor=Color(0xFF2DD4BF)){ Icon(Icons.Default.Add, null) } }) { pad ->
+        LazyRow(Modifier.fillMaxSize().padding(pad).padding(12.dp), horizontalArrangement=Arrangement.spacedBy(16.dp)) {
             items(columns) { col ->
-                Column(Modifier.width(320.dp).fillMaxHeight().background(Color(0xFF101918), shape = RoundedCornerShape(16.dp)).padding(12.dp)) {
-                    Text(col.name.replace("_"," "), style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.padding(8.dp))
-                    Divider(color = Color(0xFF2A3C38))
-                    Spacer(Modifier.height(8.dp))
-
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.weight(1f)) {
-                        items(projects.filter { it.status == col }, key = { it.id }) { proj ->
+                Column(Modifier.width(320.dp).fillMaxHeight().background(Color(0xFF101918), shape=RoundedCornerShape(16.dp)).padding(12.dp)) {
+                    val count = projects.count{it.status==col}
+                    val overdueInCol = projects.count{it.status==col && it.isOverdue()}
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement=Arrangement.SpaceBetween) {
+                        Text("${col.name} • $count", color=Color.White, style=MaterialTheme.typography.titleMedium)
+                        if(overdueInCol>0) Badge(containerColor=Color(0xFFEF4444)){ Text("$overdueInCol overdue", color=Color.White) }
+                    }
+                    HorizontalDivider(color=Color(0xFF2A3C38), modifier=Modifier.padding(vertical=8.dp))
+                    LazyColumn(verticalArrangement=Arrangement.spacedBy(12.dp), modifier=Modifier.weight(1f)) {
+                        items(projects.filter{it.status==col}, key={it.projectId}) { proj ->
                             Card(
-                                onClick = { nav.navigate("projectDetail/${proj.id}") },
+                                onClick={ nav.navigate("projectDetail/${proj.projectId}") },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1C2E2A))
+                                shape=RoundedCornerShape(12.dp),
+                                colors=CardDefaults.cardColors(containerColor=Color(0xFF1C2E2A))
                             ) {
-                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(proj.title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                                    Text("Client: ${proj.client}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFA8C5BE))
-                                    Text("Budget: R${proj.budgetZAR} (${proj.usdConverted})", style = MaterialTheme.typography.labelSmall, color = Color(0xFF5EE9D1))
-                                    Text("Deadline: ${proj.deadline}", style = MaterialTheme.typography.labelSmall, color = Color(0xFF7ED8C6))
-
-                                    if (proj.description.isNotBlank()) {
-                                        Text(proj.description, style = MaterialTheme.typography.bodySmall, color = Color(0xFFD1E8E2), maxLines = 3)
-                                    }
-
-                                    if (proj.tasks.isNotEmpty()) {
-                                        Text("Tasks: ${proj.tasks.size}/10", style = MaterialTheme.typography.labelSmall, color = Color.White)
-                                        proj.tasks.take(3).forEach { t -> Text("• $t", style = MaterialTheme.typography.labelSmall, color = Color(0xFFA8C5BE)) }
-                                        if (proj.tasks.size > 3) Text("+${proj.tasks.size-3} more - tap to view", style = MaterialTheme.typography.labelSmall, color = Color(0xFF5EE9D1))
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    // Status move row - spaced properly now
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        listOf("PROPOSED","IN_P","DONE").forEach { label ->
-                                            val target = when(label) {
-                                                "PROPOSED" -> ProjectStatus.PROPOSED
-                                                "IN_P" -> ProjectStatus.IN_PROGRESS
-                                                else -> ProjectStatus.DONE
-                                            }
-                                            FilterChip(
-                                                selected = proj.status == target,
-                                                onClick = { projects = projects.map { if(it.id==proj.id) it.copy(status=target) else it } },
-                                                label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                                                modifier = Modifier.padding(end=4.dp)
-                                            )
+                                Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                                    Text(proj.title, color=Color.White, style=MaterialTheme.typography.titleMedium)
+                                    if(proj.description.isNotBlank()) Text(proj.description, color=Color(0xFFD1E8E2), style=MaterialTheme.typography.bodySmall, maxLines=2)
+                                    val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
+                                    val overdue = proj.isOverdue()
+                                    Text("Deadline: ${sdf.format(Date(proj.deadlineTimestamp))} • ${daysLeftText(proj.deadlineTimestamp)}", color= if(overdue) Color(0xFFEF4444) else Color(0xFF7ED8C6), style=MaterialTheme.typography.labelSmall)
+                                    Text("Budget: R${proj.budgetAmount}", color=Color(0xFF5EE9D1), style=MaterialTheme.typography.labelSmall)
+                                    val taskCount = try{ proj.getTasksListSafe().size }catch(_:Exception){0}
+                                    if(taskCount>0) Text("Tasks: $taskCount/10", color=Color.White, style=MaterialTheme.typography.labelSmall)
+                                    Spacer(Modifier.height(6.dp))
+                                    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+                                        columns.filter{it!=proj.status}.take(3).forEach { target ->
+                                            FilterChip(selected=false, onClick={ scope.launch { try { db.projectDao().updateStatus(proj.projectId, target) } catch(_: Exception){} } }, label={Text(target.name.take(4), style=MaterialTheme.typography.labelSmall)})
                                         }
-                                    }
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        FilterChip(selected = proj.status==ProjectStatus.INVOICED, onClick = { projects = projects.map { if(it.id==proj.id) it.copy(status=ProjectStatus.INVOICED) else it } }, label = { Text("INVOICED") })
-                                        FilterChip(selected = proj.status==ProjectStatus.PAID, onClick = { projects = projects.map { if(it.id==proj.id) it.copy(status=ProjectStatus.PAID) else it } }, label = { Text("PAID") })
                                     }
                                 }
                             }
@@ -132,5 +142,15 @@ fun ProjectsKanbanScreen(nav: NavController) {
                 }
             }
         }
+    }
+}
+
+fun daysLeftText(ts: Long): String {
+    val diff = (ts - System.currentTimeMillis()) / (24*60*60*1000L)
+    return when {
+        diff < 0 -> "Overdue by ${-diff}d"
+        diff == 0L -> "Due today"
+        diff == 1L -> "1d left"
+        else -> "${diff}d left"
     }
 }

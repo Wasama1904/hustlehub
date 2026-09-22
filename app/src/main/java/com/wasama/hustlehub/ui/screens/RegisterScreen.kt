@@ -21,7 +21,6 @@ import com.wasama.hustlehub.util.SecurePrefs
 fun RegisterScreen(onRegistered: () -> Unit, onNavigateToLogin: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var hourlyRate by remember { mutableStateOf("250") }
     var showPass by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
@@ -41,7 +40,6 @@ fun RegisterScreen(onRegistered: () -> Unit, onNavigateToLogin: () -> Unit) {
                     trailingIcon = { IconButton(onClick = { showPass = !showPass }) { Icon(if (showPass) Icons.Default.VisibilityOff else Icons.Default.Visibility, null) } },
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(value = hourlyRate, onValueChange = { hourlyRate = it }, label = { Text("Hourly Rate (R/hr)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
 
                 Button(onClick = {
@@ -50,7 +48,7 @@ fun RegisterScreen(onRegistered: () -> Unit, onNavigateToLogin: () -> Unit) {
                     FirebaseAuth.getInstance().createUserWithEmailAndPassword(email.trim(), password)
                         .addOnSuccessListener { result ->
                             val prefs = SecurePrefs.getEncrypted(context)
-                            prefs.edit().putString("uid", result.user?.uid).putString("hourlyRate", hourlyRate).putString("email", email).apply()
+                            prefs.edit().putString("uid", result.user?.uid).putString("hourlyRate", "250").putString("email", email).apply()
                             // Also save to Firestore users/{uid} for rubric: hourlyRate, xp=0, streak=0, badges=[]
                             loading = false
                             onRegistered()
