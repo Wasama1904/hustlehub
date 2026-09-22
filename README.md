@@ -8,11 +8,10 @@
 [[Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material3-4285F4?logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
 [[Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-FFCA28?logo=firebase)](https://firebase.google.com/)
 [[Room](https://img.shields.io/badge/Room-Offline--First-003B57?logo=android)](https://developer.android.com/training/data-storage/room)
-[[License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-HustleHub is an offline-first, ZAR-friendly freelance business manager built for South African freelancers facing load-shedding and volatile exchange rates. It combines client management, Kanban project tracking, billable time tracking, PDF invoicing, and gamification to keep you productive and motivated.
+HustleHub is an offline-first, ZAR-friendly freelance business manager. It combines client management, Kanban project tracking, billable time tracking, PDF invoicing, and gamification to keep you productive and motivated.
 
-**Product Demo:** [▶️ Watch Demo on YouTube](https://youtube.com/your-video-link)
+**Product Demo:** [▶️ Watch Demo on YouTube](https://youtu.be/MQVb-npr1_w)
 
 ---
 
@@ -132,12 +131,6 @@ HustleHub follows **Clean Architecture** principles with an **MVVM** (Model-View
 
 ## 👤 Author
 
-**Wasama**
-Freelance Solutions Architect
+**Wasama Makolo - ST10451742**
+IT and Software Developer
 Cape Town, South Africa 🇿🇦
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
