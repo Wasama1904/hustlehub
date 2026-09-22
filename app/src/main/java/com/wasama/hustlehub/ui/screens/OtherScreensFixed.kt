@@ -29,9 +29,4 @@ import androidx.navigation.NavController
         Button(onClick={ nav.popBackStack() }){ Text("Back") }
     }
 }
-@Composable fun SettingsScreenFixed(nav: NavController) {
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Settings", style=MaterialTheme.typography.headlineSmall)
-        Button(onClick={ nav.popBackStack() }){ Text("Back to Dashboard") }
-    }
-}
+
