@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">HustleHub</string>
+    <string name="hustle">Activité</string>
+    <string name="clients">Clients</string>
+    <string name="kanban">Tableau Kanban</string>
+    <string name="growth">Croissance</string>
+    <string name="settings">Paramètres</string>
+    <string name="dashboard_unpaid">Non payé</string>
+    <string name="dashboard_overdue">En retard</string>
+    <string name="dashboard_active">Actif</string>
+    <string name="add_client">Ajouter un client</string>
+    <string name="overdue_by">En retard de %1$d d</string>
+    <string name="due_today">Dû aujourd\'hui</string>
+    <string name="days_left">%1$d d restants</string>
+</resources>

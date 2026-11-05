@@ -64,6 +64,9 @@ fun RegisterScreen(onRegistered: () -> Unit, onNavigateToLogin: () -> Unit) {
                                     com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("users").document(uid).set(
                                         mapOf("email" to email, "createdAt" to System.currentTimeMillis(), "hourlyRate" to 250, "currency" to "ZAR")
                                     )
+                                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                                        com.wasama.hustlehub.service.MyFirebaseMessagingService.syncTokenToFirestore(token)
+                                    }
                                 } catch (_: Exception) {}
                             }
                             loading = false

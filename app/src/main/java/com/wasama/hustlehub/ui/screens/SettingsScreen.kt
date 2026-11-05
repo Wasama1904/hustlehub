@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -92,11 +93,22 @@ fun SettingsScreen(nav: NavController) {
         AlertDialog(
             onDismissRequest = { showCurrencyDialog = false },
             title = { Text("Default Currency") },
-            text = { Text("Choose currency for budgets. Live conversion via ExchangeRate-API.") },
+            text = { Text("Choose currency for budgets & invoices (ZAR, USD, EUR, GBP, AUD).") },
             confirmButton = {
-                Column {
-                    Button(onClick = { currency = "ZAR"; prefs.edit().putString("currency", "ZAR").apply(); showCurrencyDialog = false }, modifier = Modifier.fillMaxWidth()) { Text("ZAR - Rand") }
-                    Button(onClick = { currency = "USD"; prefs.edit().putString("currency", "USD").apply(); showCurrencyDialog = false }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("USD - Dollar") }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("ZAR" to "ZAR - South African Rand (R)",
+                           "USD" to "USD - US Dollar ($)",
+                           "EUR" to "EUR - Euro (€)",
+                           "GBP" to "GBP - British Pound (£)",
+                           "AUD" to "AUD - Australian Dollar (A$)").forEach { (code, label) ->
+                        Button(
+                            onClick = { currency = code; prefs.edit().putString("currency", code).apply(); showCurrencyDialog = false },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = if(currency == code) Color(0xFF2DD4BF) else Color(0xFF2A2A2A))
+                        ) {
+                            Text(label, color = if(currency == code) Color.Black else Color.White)
+                        }
+                    }
                 }
             }
         )
@@ -165,13 +177,20 @@ fun SettingsScreen(nav: NavController) {
             item { SectionHeader("Language") }
             item {
                 SettingsCard {
-                    SettingsItem(icon = Icons.Default.Language, title = "App Language", subtitle = when(currentLang) { "af" -> "Afrikaans"; "zu" -> "isiZulu"; else -> "English" }, onClick = {})
+                    SettingsItem(icon = Icons.Default.Language, title = "App Language", subtitle = when(currentLang) { "af" -> "Afrikaans"; "xh" -> "isiXhosa"; "es" -> "Spanish"; "fr" -> "French"; else -> "English" }, onClick = {})
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("en" to "EN", "af" to "AF", "zu" to "ZU").forEach { (code, label) ->
+                        listOf("en" to "EN", "af" to "AF", "xh" to "XH", "es" to "ES", "fr" to "FR").forEach { (code, label) ->
                             FilterChip(selected = currentLang == code, onClick = { currentLang = code; prefs.edit().putString("appLang", code).apply(); val l = LocaleListCompat.forLanguageTags(code); AppCompatDelegate.setApplicationLocales(l) }, label = { Text(label) })
                         }
                     }
-                    Text("Includes South African languages: AF + ZU", color = Color.Gray, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp))
+                    Text("Supported languages: English, Afrikaans, isiXhosa, Spanish, French", color = Color.Gray, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp))
+                }
+            }
+
+            item { SectionHeader("Tools & Calculators") }
+            item {
+                SettingsCard {
+                    SettingsItem(icon = Icons.Default.Calculate, title = "Invoice Calculator", subtitle = "Calculate hours, hourly rate, tax & expenses", onClick = { nav.navigate("calculator") })
                 }
             }
 
@@ -232,7 +251,14 @@ fun SettingsCard(content: @Composable (ColumnScope.() -> Unit)) { Card(Modifier.
 
 @Composable
 fun SettingsItem(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit, trailing: @Composable (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = Color(0xFF2DD4BF), modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(12.dp))

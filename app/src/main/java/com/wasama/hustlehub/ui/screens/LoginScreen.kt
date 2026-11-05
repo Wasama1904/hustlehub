@@ -92,6 +92,9 @@ fun LoginScreen(onLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
                             .addOnSuccessListener { user ->
                                 val prefs = SecurePrefs.getEncrypted(context)
                                 prefs.edit().putString("uid", user.user?.uid).putString("email", email).apply()
+                                com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                                    com.wasama.hustlehub.service.MyFirebaseMessagingService.syncTokenToFirestore(token)
+                                }
                                 loading = false
                                 onLogin()
                             }

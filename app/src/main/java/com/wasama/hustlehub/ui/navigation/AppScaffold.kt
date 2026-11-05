@@ -62,6 +62,7 @@ fun AppScaffold() {
             composable("timer/{id}") { TimerScreenFixed(it.arguments?.getString("id") ?: "", nav) }
             composable("invoice/{id}") { InvoiceScreenFixed(it.arguments?.getString("id") ?: "", nav) }
             composable("settings") { SettingsScreen(nav) }
+            composable("calculator") { InvoiceCalculatorScreen(nav) }
         }
     }
 }
