@@ -21,6 +21,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import coil.compose.AsyncImage
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.firestore.FirebaseFirestore
 import com.wasama.hustlehub.util.SecurePrefs
 import com.google.firebase.auth.FirebaseAuth
 
@@ -41,6 +48,24 @@ fun SettingsScreen(nav: NavController) {
     var autoConvert by remember { mutableStateOf(prefs.getBoolean("autoConvert", true)) }
     var freezeTokens by remember { mutableStateOf(prefs.getInt("freezeTokens", 1)) }
     var currentLang by remember { mutableStateOf(prefs.getString("appLang", "en") ?: "en") }
+    var profileUrl by remember { mutableStateOf(prefs.getString("profileUrl", "") ?: "") }
+    var isUploading by remember { mutableStateOf(false) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            isUploading = true
+            val uid = auth.currentUser?.uid ?: prefs.getString("uid","") ?: "temp"
+            val ref = FirebaseStorage.getInstance().reference.child("users/$uid/profile.jpg")
+            ref.putFile(uri).addOnSuccessListener {
+                ref.downloadUrl.addOnSuccessListener { downloadUri ->
+                    profileUrl = downloadUri.toString()
+                    prefs.edit().putString("profileUrl", profileUrl).apply()
+                    FirebaseFirestore.getInstance().collection("users").document(uid)
+                        .update("profileUrl", profileUrl)
+                    isUploading = false
+                }
+            }.addOnFailureListener { isUploading = false }
+        }
+    }
 
     var showRateDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
@@ -93,6 +118,26 @@ fun SettingsScreen(nav: NavController) {
 
             // ACCOUNT SECTION
             item { SectionHeader("Account") }
+            item {
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box {
+                            if (profileUrl.isNotEmpty()) {
+                                AsyncImage(model = profileUrl, contentDescription = "Profile", modifier = Modifier.size(80.dp).clip(CircleShape))
+                            } else {
+                                Icon(Icons.Default.Person, null, Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF2A2A2A)).padding(16.dp), tint = Color(0xFF2DD4BF))
+                            }
+                            if (isUploading) CircularProgressIndicator(Modifier.align(Alignment.Center).size(40.dp))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { launcher.launch("image/*") }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2DD4BF))) {
+                            Icon(Icons.Default.Upload, null); Spacer(Modifier.width(4.dp))
+                            Text(if(profileUrl.isEmpty()) "Upload Profile Pic (Blob Storage)" else "Change Photo")
+                        }
+                        Text("Stored in Firebase Storage: users/{uid}/profile.jpg", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+            }
             item {
                 SettingsCard {
                     SettingsItem(icon = Icons.Default.Person, title = "Email", subtitle = auth.currentUser?.email ?: prefs.getString("email", "") ?: "Not signed in", onClick = {})

@@ -80,6 +80,8 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     // Misc
     implementation(libs.androidx.security.crypto)
