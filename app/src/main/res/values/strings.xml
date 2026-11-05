@@ -12,4 +12,5 @@
     <string name="overdue_by">Overdue by %1$d d</string>
     <string name="due_today">Due today</string>
     <string name="days_left">%1$d d left</string>
+    <string name="default_web_client_id">1082197860880-apps.googleusercontent.com</string>
 </resources>
