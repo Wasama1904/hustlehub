@@ -11,6 +11,7 @@
 HustleHub is an offline-first freelance business manager designed to help you stay organized and get paid. It combines client management, Kanban project tracking, billable time tracking, PDF invoicing, robust calculator tools, and gamification to keep you productive and motivated.
 
 **Product Demo:** [▶️ Watch Demo on YouTube](https://youtu.be/MQVb-npr1_w)
+**Release Report:** [📄 View HustleHub Release Report](HustleHub_Release_Report_Final.pdf)
 
 ---
 
