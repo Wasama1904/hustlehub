@@ -1,9 +1,9 @@
-name: Android CI - HustleHub
+name: HustleHub CI - Automated Build & Test
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,12 +16,12 @@ jobs:
           distribution: 'temurin'
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --stacktrace
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
-      - name: Upload APK
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hustlehub-debug-apk
+          name: HustleHub-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk

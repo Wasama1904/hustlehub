@@ -1,6 +1,14 @@
+google-services.json
+local.properties
+*.jks
+*.keystore
+keystore.properties
+/build
+/app/build
+/.gradle
+/gradle
 *.iml
 .gradle
-/local.properties
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -8,10 +16,8 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
-/build
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 *.hprof
 .idea/
