@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">HustleHub</string>
+    <string name="hustle">Gewoel</string>
+    <string name="clients">Kliënte</string>
+    <string name="kanban">Kanban Bord</string>
+    <string name="growth">Groei</string>
+    <string name="settings">Instellings</string>
+    <string name="dashboard_unpaid">Onbetaald</string>
+    <string name="dashboard_overdue">Agterstallig</string>
+    <string name="dashboard_active">Aktief</string>
+    <string name="add_client">Voeg Kliënt By</string>
+    <string name="overdue_by">Agterstallig met %1$d d</string>
+    <string name="due_today">Vandag verskuldig</string>
+    <string name="days_left">%1$d d oor</string>
+</resources>

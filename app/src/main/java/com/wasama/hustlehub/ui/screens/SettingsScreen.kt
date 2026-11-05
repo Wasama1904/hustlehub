@@ -2,6 +2,8 @@ package com.wasama.hustlehub.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -38,6 +40,7 @@ fun SettingsScreen(nav: NavController) {
     var darkTheme by remember { mutableStateOf(prefs.getBoolean("darkTheme", true)) }
     var autoConvert by remember { mutableStateOf(prefs.getBoolean("autoConvert", true)) }
     var freezeTokens by remember { mutableStateOf(prefs.getInt("freezeTokens", 1)) }
+    var currentLang by remember { mutableStateOf(prefs.getString("appLang", "en") ?: "en") }
 
     var showRateDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
@@ -160,6 +163,32 @@ fun SettingsScreen(nav: NavController) {
             item {
                 SettingsCard {
                     SettingsItem(icon = Icons.Default.Security, title = "Encrypted Storage", subtitle = "Token stored in EncryptedSharedPreferences, API keys in local.properties not Git - meets rubric security", onClick = {})
+                    HorizontalDivider()
+                    SettingsItem(
+                        icon = Icons.Default.Language,
+                        title = "App Language",
+                        subtitle = when(currentLang){
+                            "af" -> "Afrikaans - vir SA hustlers"
+                            "zu" -> "isiZulu - ukuphithizela"
+                            else -> "English - default"
+                        },
+                        onClick = {}
+                    )
+                    Row(Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("en" to "EN", "af" to "AF", "zu" to "ZU").forEach { (code, label) ->
+                            FilterChip(
+                                selected = currentLang == code,
+                                onClick = {
+                                    currentLang = code
+                                    prefs.edit().putString("appLang", code).apply()
+                                    val localeList = LocaleListCompat.forLanguageTags(code)
+                                    AppCompatDelegate.setApplicationLocales(localeList)
+                                },
+                                label = { Text(label) },
+                                leadingIcon = { if(currentLang==code) Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
+                            )
+                        }
+                    }
                     HorizontalDivider()
                     SettingsItem(icon = Icons.Default.Storage, title = "Clear Local Data", subtitle = "Wipe Room DB - fixes migration crashes", onClick = {
                         context.deleteDatabase("hustlehub.db")

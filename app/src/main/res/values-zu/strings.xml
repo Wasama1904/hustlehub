@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">HustleHub</string>
+    <string name="hustle">Ukuphithizela</string>
+    <string name="clients">Amaklayenti</string>
+    <string name="kanban">Ibhodi leKanban</string>
+    <string name="growth">Ukukhula</string>
+    <string name="settings">Izilungiselelo</string>
+    <string name="dashboard_unpaid">Akuzange kukhokhelwe</string>
+    <string name="dashboard_overdue">Kudlulelwe</string>
+    <string name="dashboard_active">Kuyasebenza</string>
+    <string name="add_client">Engeza Iklayenti</string>
+    <string name="overdue_by">Kudlule %1$d d</string>
+    <string name="due_today">Namuhla</string>
+    <string name="days_left">%1$d d eseleyo</string>
+</resources>
