@@ -131,6 +131,6 @@ HustleHub follows **Clean Architecture** principles with an **MVVM** (Model-View
 
 ## 👤 Author
 
-**Wasama Makolo - ST10451742**
+**Wasama Makolo**
 IT and Software Developer
 Cape Town, South Africa 🇿🇦

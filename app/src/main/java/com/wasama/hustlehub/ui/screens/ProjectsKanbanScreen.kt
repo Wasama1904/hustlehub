@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ fun ProjectsKanbanScreen(nav: NavController) {
 
     if (projects.isEmpty()) {
         Scaffold(
+            topBar = { TopAppBar(title = { Text("Board", fontWeight = FontWeight.Bold) }, actions = { IconButton(onClick = { nav.navigate("settings") }) { Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White) } }) },
             floatingActionButton = {
                 FloatingActionButton(onClick = { showAdd = true }, containerColor = Color(0xFF2DD4BF)) {
                     Icon(Icons.Default.Add, null, tint = Color.Black)
@@ -60,7 +62,7 @@ fun ProjectsKanbanScreen(nav: NavController) {
     val allStatuses = listOf(ProjectStatus.PROPOSED, ProjectStatus.IN_PROGRESS, ProjectStatus.DONE, ProjectStatus.INVOICED, ProjectStatus.PAID)
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Board • ${projects.size} projects", fontWeight = FontWeight.Bold) }) },
+        topBar = { TopAppBar(title = { Text("Board • ${projects.size} projects", fontWeight = FontWeight.Bold) }, actions = { IconButton(onClick = { nav.navigate("settings") }) { Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White) } }) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAdd = true }, containerColor = Color(0xFF2DD4BF)) {
                 Icon(Icons.Default.Add, null, tint = Color.Black)
@@ -135,7 +137,7 @@ fun AddProjectDialogProduction(onDismiss: () -> Unit, db: HustleHubDatabase) {
                 OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title*") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = desc, onValueChange = { desc = it }, label = { Text("Description (optional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = tasksText, onValueChange = { tasksText = it }, label = { Text("Tasks (optional, max 10, one per line)") }, minLines = 3, modifier = Modifier.fillMaxWidth())
-                Text("All fields start empty - no test data", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Text("All fields start empty", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
         },
         confirmButton = {

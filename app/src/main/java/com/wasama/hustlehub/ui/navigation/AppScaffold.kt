@@ -20,13 +20,14 @@ fun AppScaffold() {
         BottomItem("dashboard", "Hustle", Icons.Default.Dashboard),
         BottomItem("clients", "Clients", Icons.Default.People),
         BottomItem("projects", "Board", Icons.Default.ViewKanban),
-        BottomItem("stats", "Growth", Icons.Default.EmojiEvents)
+        BottomItem("stats", "Growth", Icons.Default.EmojiEvents),
+        BottomItem("settings", "Profile", Icons.Default.Person)
     )
     val backStack by nav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
     // Hide bottom bar on detail/timer/invoice/login
-    val showBottomBar = currentRoute in listOf("dashboard","clients","projects","stats")
+    val showBottomBar = currentRoute in listOf("dashboard","clients","projects","stats","settings")
 
     Scaffold(
         bottomBar = {

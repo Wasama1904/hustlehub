@@ -131,6 +131,11 @@ fun GrowthScreenProduction(
         topBar = {
             TopAppBar(
                 title = { Text("Growth", fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = { nav.navigate("settings") }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0A0A0A))
             )
         },

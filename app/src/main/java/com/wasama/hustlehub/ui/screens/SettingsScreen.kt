@@ -42,7 +42,6 @@ fun SettingsScreen(nav: NavController) {
     var defaultDeadlineDays by remember { mutableStateOf(prefs.getInt("defaultDeadline", 7)) }
     var notificationsEnabled by remember { mutableStateOf(prefs.getBoolean("notifications", true)) }
     var offlineSync by remember { mutableStateOf(prefs.getBoolean("offlineSync", true)) }
-    var darkTheme by remember { mutableStateOf(prefs.getBoolean("darkTheme", true)) }
     var autoConvert by remember { mutableStateOf(prefs.getBoolean("autoConvert", true)) }
     var currentLang by remember { mutableStateOf(prefs.getString("appLang", "en") ?: "en") }
     var profileUrl by remember { mutableStateOf(prefs.getString("profileUrl", "") ?: "") }
@@ -105,13 +104,12 @@ fun SettingsScreen(nav: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("You", fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } })
+            TopAppBar(title = { Text("Profile & Settings", fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } })
         },
         containerColor = Color(0xFF0A0A0A)
     ) { pad ->
         LazyColumn(Modifier.fillMaxSize().padding(pad).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-            // PROFILE HEADER - PRODUCTION CLEAN, NO TEST DATA
             item {
                 Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color(0xFF1E1E1E))) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -119,7 +117,6 @@ fun SettingsScreen(nav: NavController) {
                             if (profileUrl.isNotEmpty()) {
                                 AsyncImage(model = profileUrl, contentDescription = "Profile", modifier = Modifier.size(80.dp).clip(CircleShape))
                             } else {
-                                // PRODUCTION: Show initials, not placeholder - starts empty
                                 val email = auth.currentUser?.email ?: prefs.getString("email", "") ?: "U"
                                 Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF2DD4BF)), contentAlignment = Alignment.Center) {
                                     Text(email.firstOrNull()?.uppercase() ?: "U", color = Color.Black, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -133,9 +130,9 @@ fun SettingsScreen(nav: NavController) {
                         Spacer(Modifier.height(12.dp))
                         Button(onClick = { launcher.launch("image/*") }, colors = ButtonDefaults.buttonColors(Color(0xFF2DD4BF)), modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Default.Upload, null, tint = Color.Black); Spacer(Modifier.width(8.dp))
-                            Text(if (profileUrl.isEmpty()) "Upload Profile Pic (Blob Storage)" else "Change Photo", color = Color.Black)
+                            Text(if (profileUrl.isEmpty()) "Upload Profile Picture" else "Change Photo", color = Color.Black)
                         }
-                        Text("Firebase Storage: users/{uid}/profile.jpg", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text("Cloud Synced Profile Picture", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
             }
@@ -165,7 +162,7 @@ fun SettingsScreen(nav: NavController) {
                 }
             }
 
-            item { SectionHeader("Language - PoE Requirement") }
+            item { SectionHeader("Language") }
             item {
                 SettingsCard {
                     SettingsItem(icon = Icons.Default.Language, title = "App Language", subtitle = when(currentLang) { "af" -> "Afrikaans"; "zu" -> "isiZulu"; else -> "English" }, onClick = {})
@@ -174,11 +171,11 @@ fun SettingsScreen(nav: NavController) {
                             FilterChip(selected = currentLang == code, onClick = { currentLang = code; prefs.edit().putString("appLang", code).apply(); val l = LocaleListCompat.forLanguageTags(code); AppCompatDelegate.setApplicationLocales(l) }, label = { Text(label) })
                         }
                     }
-                    Text("Includes 2 SA languages: AF + ZU - Onbetaald / Akuzange kukhokhelwe", color = Color.Gray, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp))
+                    Text("Includes South African languages: AF + ZU", color = Color.Gray, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp))
                 }
             }
 
-            item { SectionHeader("Notifications & Offline - PoE") }
+            item { SectionHeader("Notifications & Offline") }
             item {
                 SettingsCard {
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -187,7 +184,7 @@ fun SettingsScreen(nav: NavController) {
                     }
                     HorizontalDivider(color = Color(0xFF2A2A2A))
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) { Text("Offline-first Sync", color = Color.White); Text("Room truth + WorkManager sync - load-shedding", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
+                        Column(Modifier.weight(1f)) { Text("Offline-first Sync", color = Color.White); Text("Room truth + WorkManager sync", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
                         Switch(checked = offlineSync, onCheckedChange = { offlineSync = it; prefs.edit().putBoolean("offlineSync", it).apply() })
                     }
                     HorizontalDivider(color = Color(0xFF2A2A2A))
@@ -203,25 +200,25 @@ fun SettingsScreen(nav: NavController) {
                             .setContentText("Project due tomorrow! +50 XP if on time")
                             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH).build()
                         nm.notify(1, notif)
-                    }, modifier = Modifier.fillMaxWidth().padding(16.dp), colors = ButtonDefaults.buttonColors(Color(0xFF2A2A2A))) { Text("Test Push Notification (FCM)", color = Color.White) }
+                    }, modifier = Modifier.fillMaxWidth().padding(16.dp), colors = ButtonDefaults.buttonColors(Color(0xFF2A2A2A))) { Text("Test Push Notification", color = Color.White) }
                 }
             }
 
             item { SectionHeader("Security & Data") }
             item {
                 SettingsCard {
-                    SettingsItem(icon = Icons.Default.Security, title = "Encrypted Storage", subtitle = "Token in EncryptedSharedPreferences, keys in local.properties", onClick = {})
+                    SettingsItem(icon = Icons.Default.Security, title = "Encrypted Storage", subtitle = "Token in EncryptedSharedPreferences, secure keys", onClick = {})
                     HorizontalDivider(color = Color(0xFF2A2A2A))
-                    SettingsItem(icon = Icons.Default.Storage, title = "Clear Local Data", subtitle = "Wipe Room DB - fixes crashes + removes test data", onClick = { context.deleteDatabase("hustlehub.db"); prefs.edit().clear().apply() })
+                    SettingsItem(icon = Icons.Default.Storage, title = "Clear Local Data", subtitle = "Wipe local database and preferences", onClick = { context.deleteDatabase("hustlehub.db"); prefs.edit().clear().apply() })
                     HorizontalDivider(color = Color(0xFF2A2A2A))
-                    SettingsItem(icon = Icons.Default.Info, title = "About", subtitle = "OPSC6312 - ST10451742 - Production build, no test data", onClick = {})
+                    SettingsItem(icon = Icons.Default.Info, title = "About", subtitle = "HustleHub v1.0 - Freelance Business Manager", onClick = {})
                 }
             }
 
             item {
-                Button(onClick = { FirebaseAuth.getInstance().signOut(); prefs.edit().clear().apply(); nav.navigate("login") { popUpTo(0) { inclusive = true } } }, modifier = Modifier.fillMaxWidth().height(48.dp), colors = ButtonDefaults.buttonColors(Color(0xFFEF4444))) { Icon(Icons.Default.Logout, null); Spacer(Modifier.width(8.dp)); Text("Logout") }
+                Button(onClick = { FirebaseAuth.getInstance().signOut(); prefs.edit().clear().apply(); nav.navigate("login") { popUpTo(0) { inclusive = true } } }, modifier = Modifier.fillMaxWidth().height(48.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))) { Icon(Icons.Default.Logout, null); Spacer(Modifier.width(8.dp)); Text("Logout") }
                 Spacer(Modifier.height(16.dp))
-                Text("HustleHub v1.0 Production - All data starts at zero for new users", style = MaterialTheme.typography.labelSmall, color = Color.Gray, modifier = Modifier.padding(8.dp))
+                Text("HustleHub v1.0 - Hustle Smart, Grow Fast", style = MaterialTheme.typography.labelSmall, color = Color.Gray, modifier = Modifier.padding(8.dp))
             }
         }
     }
@@ -231,7 +228,7 @@ fun SettingsScreen(nav: NavController) {
 fun SectionHeader(title: String) { Text(title, style = MaterialTheme.typography.titleSmall, color = Color(0xFF2DD4BF), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
 
 @Composable
-fun SettingsCard(content: @Composable() (androidx.compose.foundation.layout.ColumnScope.() -> Unit)) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(Color(0xFF1E1E1E)), content = content) }
+fun SettingsCard(content: @Composable (ColumnScope.() -> Unit)) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(Color(0xFF1E1E1E)), content = content) }
 
 @Composable
 fun SettingsItem(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit, trailing: @Composable (() -> Unit)? = null) {

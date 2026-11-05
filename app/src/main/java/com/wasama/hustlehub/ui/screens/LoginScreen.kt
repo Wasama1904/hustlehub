@@ -90,7 +90,6 @@ fun LoginScreen(onLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
                         loading = true; error = null
                         FirebaseAuth.getInstance().signInWithEmailAndPassword(email.trim(), password)
                             .addOnSuccessListener { user ->
-                                // RUBRIC: encrypted password storage - store token securely, not raw password
                                 val prefs = SecurePrefs.getEncrypted(context)
                                 prefs.edit().putString("uid", user.user?.uid).putString("email", email).apply()
                                 loading = false
@@ -126,7 +125,7 @@ fun LoginScreen(onLogin: () -> Unit, onNavigateToRegister: () -> Unit) {
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    Text("SSO PoE Requirement - one-tap login", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color.Gray)
+                    Text("Fast secure one-tap login", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color.Gray)
                 }
 
                 TextButton(onClick = onNavigateToRegister, modifier = Modifier.align(Alignment.CenterHorizontally)) {

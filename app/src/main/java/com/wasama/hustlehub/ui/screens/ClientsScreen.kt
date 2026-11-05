@@ -35,7 +35,7 @@ fun ClientsScreen(nav: NavController) {
 
     if (clients.isEmpty()) {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Clients", fontWeight = FontWeight.Bold) }) },
+            topBar = { TopAppBar(title = { Text("Clients", fontWeight = FontWeight.Bold) }, actions = { IconButton(onClick = { nav.navigate("settings") }) { Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White) } }) },
             floatingActionButton = {
                 FloatingActionButton(onClick = { showAdd = true }, containerColor = Color(0xFF2DD4BF)) {
                     Icon(Icons.Default.Add, null, tint = Color.Black)
@@ -56,7 +56,7 @@ fun ClientsScreen(nav: NavController) {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Clients (${clients.size})", fontWeight = FontWeight.Bold) }) },
+        topBar = { TopAppBar(title = { Text("Clients (${clients.size})", fontWeight = FontWeight.Bold) }, actions = { IconButton(onClick = { nav.navigate("settings") }) { Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White) } }) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAdd = true }, containerColor = Color(0xFF2DD4BF)) {
                 Icon(Icons.Default.Add, null, tint = Color.Black)
@@ -109,7 +109,7 @@ fun AddClientDialogProduction(onDismiss: () -> Unit, db: HustleHubDatabase) {
                 OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = company, onValueChange = { company = it }, label = { Text("Company (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                Text("No test data - all fields start empty for real user", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Text("All fields start empty", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
         },
         confirmButton = {
