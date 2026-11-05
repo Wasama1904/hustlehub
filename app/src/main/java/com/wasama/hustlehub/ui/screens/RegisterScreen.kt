@@ -15,7 +15,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import com.wasama.hustlehub.data.local.HustleHubDatabase
+import com.wasama.hustlehub.data.local.UserStatsEntity
 import com.wasama.hustlehub.util.SecurePrefs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(onRegistered: () -> Unit, onNavigateToLogin: () -> Unit) {
@@ -25,6 +29,7 @@ fun RegisterScreen(onRegistered: () -> Unit, onNavigateToLogin: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Create Account", style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold))
@@ -48,8 +53,19 @@ fun RegisterScreen(onRegistered: () -> Unit, onNavigateToLogin: () -> Unit) {
                     FirebaseAuth.getInstance().createUserWithEmailAndPassword(email.trim(), password)
                         .addOnSuccessListener { result ->
                             val prefs = SecurePrefs.getEncrypted(context)
-                            prefs.edit().putString("uid", result.user?.uid).putString("hourlyRate", "250").putString("email", email).apply()
-                            // Also save to Firestore users/{uid} for rubric: hourlyRate, xp=0, streak=0, badges=[]
+                            val uid = result.user?.uid ?: ""
+                            prefs.edit().putString("uid", uid).putString("hourlyRate", "250").putString("email", email).apply()
+                            
+                            val db = HustleHubDatabase.get(context)
+                            scope.launch(Dispatchers.IO) {
+                                try {
+                                    db.clearAllTables()
+                                    db.userStatsDao().insert(UserStatsEntity(uid = uid, totalXp = 0, level = 1, freezeTokens = 1))
+                                    com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("users").document(uid).set(
+                                        mapOf("email" to email, "createdAt" to System.currentTimeMillis(), "hourlyRate" to 250, "currency" to "ZAR")
+                                    )
+                                } catch (_: Exception) {}
+                            }
                             loading = false
                             onRegistered()
                         }

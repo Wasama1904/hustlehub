@@ -11,6 +11,28 @@ class Converters {
     @TypeConverter fun toStatus(s: String): ProjectStatus = try { ProjectStatus.valueOf(s) } catch(e: Exception) { ProjectStatus.PROPOSED }
 }
 
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        try {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS user_stats (
+                    uid TEXT NOT NULL PRIMARY KEY,
+                    totalXp INTEGER NOT NULL DEFAULT 0,
+                    level INTEGER NOT NULL DEFAULT 1,
+                    currentStreak INTEGER NOT NULL DEFAULT 0,
+                    longestStreak INTEGER NOT NULL DEFAULT 0,
+                    projectsCompleted INTEGER NOT NULL DEFAULT 0,
+                    tasksCompleted INTEGER NOT NULL DEFAULT 0,
+                    totalEarned INTEGER NOT NULL DEFAULT 0,
+                    onTimeCount INTEGER NOT NULL DEFAULT 0,
+                    freezeTokens INTEGER NOT NULL DEFAULT 1,
+                    lastActiveDate INTEGER NOT NULL DEFAULT 0
+                )
+            """.trimIndent())
+        } catch (_: Exception) {}
+    }
+}
+
 val MIGRATION_2_3 = object : Migration(2,3) {
     override fun migrate(db: SupportSQLiteDatabase) {
         try { db.execSQL("ALTER TABLE invoices ADD COLUMN issueDate INTEGER NOT NULL DEFAULT 0") } catch(_:Exception){}
@@ -25,7 +47,7 @@ val MIGRATION_1_2_SAFE = object : Migration(1,2) {
     }
 }
 
-@Database(entities=[UserEntity::class, ClientEntity::class, ProjectEntity::class, TaskEntity::class, TimeEntryEntity::class, InvoiceEntity::class, ExchangeRateCache::class], version=3, exportSchema=false)
+@Database(entities=[UserEntity::class, ClientEntity::class, ProjectEntity::class, TaskEntity::class, TimeEntryEntity::class, InvoiceEntity::class, ExchangeRateCache::class, UserStatsEntity::class], version=4, exportSchema=false)
 @TypeConverters(Converters::class)
 abstract class HustleHubDatabase: RoomDatabase() {
     abstract fun clientDao(): ClientDao
@@ -34,11 +56,13 @@ abstract class HustleHubDatabase: RoomDatabase() {
     abstract fun timeDao(): TimeDao
     abstract fun invoiceDao(): InvoiceDao
     abstract fun rateDao(): RateDao
+    abstract fun userStatsDao(): UserStatsDao
+
     companion object {
         @Volatile private var INSTANCE: HustleHubDatabase? = null
         fun get(context: Context): HustleHubDatabase = INSTANCE ?: synchronized(this) {
             INSTANCE ?: Room.databaseBuilder(context.applicationContext, HustleHubDatabase::class.java, "hustlehub.db")
-                .addMigrations(MIGRATION_1_2_SAFE, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2_SAFE, MIGRATION_2_3, MIGRATION_3_4)
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
         }
@@ -56,6 +80,7 @@ abstract class HustleHubDatabase: RoomDatabase() {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insert(client: ClientEntity)
     @Delete suspend fun delete(client: ClientEntity)
     @Query("SELECT * FROM clients WHERE clientId = :id LIMIT 1") suspend fun getById(id: String): ClientEntity?
+    @Query("DELETE FROM clients") suspend fun clearAll()
 }
 @Dao interface ProjectDao {
     @Query("SELECT * FROM projects WHERE userId = :userId ORDER BY deadlineTimestamp ASC") fun getProjects(userId: String): Flow<List<ProjectEntity>>
