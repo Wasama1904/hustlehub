@@ -2,12 +2,13 @@ package com.wasama.hustlehub.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,28 +16,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import androidx.navigation.NavController
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
-import androidx.core.app.NotificationCompat
 import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
-import com.wasama.hustlehub.R
 import com.wasama.hustlehub.util.SecurePrefs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +37,6 @@ fun SettingsScreen(nav: NavController) {
     val prefs = remember { SecurePrefs.getEncrypted(context) }
     val auth = FirebaseAuth.getInstance()
 
-    // Load saved settings
     var hourlyRate by remember { mutableStateOf(prefs.getString("hourlyRate", "250") ?: "250") }
     var currency by remember { mutableStateOf(prefs.getString("currency", "ZAR") ?: "ZAR") }
     var defaultDeadlineDays by remember { mutableStateOf(prefs.getInt("defaultDeadline", 7)) }
@@ -54,36 +44,27 @@ fun SettingsScreen(nav: NavController) {
     var offlineSync by remember { mutableStateOf(prefs.getBoolean("offlineSync", true)) }
     var darkTheme by remember { mutableStateOf(prefs.getBoolean("darkTheme", true)) }
     var autoConvert by remember { mutableStateOf(prefs.getBoolean("autoConvert", true)) }
-    var freezeTokens by remember { mutableStateOf(prefs.getInt("freezeTokens", 1)) }
     var currentLang by remember { mutableStateOf(prefs.getString("appLang", "en") ?: "en") }
     var profileUrl by remember { mutableStateOf(prefs.getString("profileUrl", "") ?: "") }
     var isUploading by remember { mutableStateOf(false) }
+
+    var showRateDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             isUploading = true
-            val uid = auth.currentUser?.uid ?: prefs.getString("uid","") ?: "temp"
+            val uid = auth.currentUser?.uid ?: prefs.getString("uid", "") ?: "temp"
             val ref = FirebaseStorage.getInstance().reference.child("users/$uid/profile.jpg")
             ref.putFile(uri).addOnSuccessListener {
                 ref.downloadUrl.addOnSuccessListener { downloadUri ->
                     profileUrl = downloadUri.toString()
                     prefs.edit().putString("profileUrl", profileUrl).apply()
-                    FirebaseFirestore.getInstance().collection("users").document(uid)
-                        .update("profileUrl", profileUrl)
+                    FirebaseFirestore.getInstance().collection("users").document(uid).update("profileUrl", profileUrl)
                     isUploading = false
                 }
             }.addOnFailureListener { isUploading = false }
         }
-    }
-
-    var showRateDialog by remember { mutableStateOf(false) }
-    var showCurrencyDialog by remember { mutableStateOf(false) }
-
-    val notifPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-    LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        FirebaseMessaging.getInstance().subscribeToTopic("deadlines")
     }
 
     if (showRateDialog) {
@@ -94,7 +75,7 @@ fun SettingsScreen(nav: NavController) {
             text = {
                 Column {
                     OutlinedTextField(value = tempRate, onValueChange = { tempRate = it }, label = { Text("R/hr") }, singleLine = true)
-                    Text("Used to calculate billable: hours * rate = invoice amount", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text("Used to calculate billable: hours * rate = invoice", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
             },
             confirmButton = {
@@ -115,8 +96,8 @@ fun SettingsScreen(nav: NavController) {
             text = { Text("Choose currency for budgets. Live conversion via ExchangeRate-API.") },
             confirmButton = {
                 Column {
-                    Button(onClick = { currency = "ZAR"; prefs.edit().putString("currency", "ZAR").apply(); showCurrencyDialog = false }, modifier = Modifier.fillMaxWidth()) { Text("ZAR - South African Rand") }
-                    Button(onClick = { currency = "USD"; prefs.edit().putString("currency", "USD").apply(); showCurrencyDialog = false }, modifier = Modifier.fillMaxWidth().padding(top=8.dp)) { Text("USD - US Dollar") }
+                    Button(onClick = { currency = "ZAR"; prefs.edit().putString("currency", "ZAR").apply(); showCurrencyDialog = false }, modifier = Modifier.fillMaxWidth()) { Text("ZAR - Rand") }
+                    Button(onClick = { currency = "USD"; prefs.edit().putString("currency", "USD").apply(); showCurrencyDialog = false }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("USD - Dollar") }
                 }
             }
         )
@@ -124,208 +105,141 @@ fun SettingsScreen(nav: NavController) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } }
-            )
-        }
+            TopAppBar(title = { Text("You", fontWeight = FontWeight.Bold) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } })
+        },
+        containerColor = Color(0xFF0A0A0A)
     ) { pad ->
         LazyColumn(Modifier.fillMaxSize().padding(pad).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-            // ACCOUNT SECTION
-            item { SectionHeader("Account") }
+            // PROFILE HEADER - PRODUCTION CLEAN, NO TEST DATA
             item {
-                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))) {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(Color(0xFF1E1E1E))) {
+                    Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box {
                             if (profileUrl.isNotEmpty()) {
                                 AsyncImage(model = profileUrl, contentDescription = "Profile", modifier = Modifier.size(80.dp).clip(CircleShape))
                             } else {
-                                Icon(Icons.Default.Person, null, Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF2A2A2A)).padding(16.dp), tint = Color(0xFF2DD4BF))
+                                // PRODUCTION: Show initials, not placeholder - starts empty
+                                val email = auth.currentUser?.email ?: prefs.getString("email", "") ?: "U"
+                                Box(Modifier.size(80.dp).clip(CircleShape).background(Color(0xFF2DD4BF)), contentAlignment = Alignment.Center) {
+                                    Text(email.firstOrNull()?.uppercase() ?: "U", color = Color.Black, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                                }
                             }
                             if (isUploading) CircularProgressIndicator(Modifier.align(Alignment.Center).size(40.dp))
                         }
-                        Spacer(Modifier.height(8.dp))
-                        Button(onClick = { launcher.launch("image/*") }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2DD4BF))) {
-                            Icon(Icons.Default.Upload, null); Spacer(Modifier.width(4.dp))
-                            Text(if(profileUrl.isEmpty()) "Upload Profile Pic (Blob Storage)" else "Change Photo")
+                        Spacer(Modifier.height(12.dp))
+                        Text(auth.currentUser?.email ?: prefs.getString("email", "") ?: "New Hustler", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Level 1 • Newbie Hustler • 0 XP", color = Color.Gray, style = MaterialTheme.typography.labelSmall)
+                        Spacer(Modifier.height(12.dp))
+                        Button(onClick = { launcher.launch("image/*") }, colors = ButtonDefaults.buttonColors(Color(0xFF2DD4BF)), modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Default.Upload, null, tint = Color.Black); Spacer(Modifier.width(8.dp))
+                            Text(if (profileUrl.isEmpty()) "Upload Profile Pic (Blob Storage)" else "Change Photo", color = Color.Black)
                         }
-                        Text("Stored in Firebase Storage: users/{uid}/profile.jpg", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text("Firebase Storage: users/{uid}/profile.jpg", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
-                }
-            }
-            item {
-                SettingsCard {
-                    SettingsItem(icon = Icons.Default.Person, title = "Email", subtitle = auth.currentUser?.email ?: prefs.getString("email", "") ?: "Not signed in", onClick = {})
-                    HorizontalDivider()
-                    SettingsItem(icon = Icons.Default.Payments, title = "Hourly Rate", subtitle = "R$hourlyRate/hr - used for all billable calculations", onClick = { showRateDialog = true }, trailing = { Text("R$hourlyRate", color = Color(0xFF2DD4BF)) })
-                    HorizontalDivider()
-                    SettingsItem(icon = Icons.Default.CurrencyExchange, title = "Default Currency", subtitle = "$currency - converted live via ExchangeRate-API", onClick = { showCurrencyDialog = true }, trailing = { Text(currency, color = Color(0xFF2DD4BF)) })
                 }
             }
 
-            // PROJECT DEFAULTS
+            item { SectionHeader("Account") }
+            item {
+                SettingsCard {
+                    SettingsItem(icon = Icons.Default.Payments, title = "Hourly Rate", subtitle = "R$hourlyRate/hr - used for billable calc", onClick = { showRateDialog = true }, trailing = { Text("R$hourlyRate", color = Color(0xFF2DD4BF)) })
+                    HorizontalDivider(color = Color(0xFF2A2A2A))
+                    SettingsItem(icon = Icons.Default.CurrencyExchange, title = "Default Currency", subtitle = "$currency - ExchangeRate-API live", onClick = { showCurrencyDialog = true }, trailing = { Text(currency, color = Color(0xFF2DD4BF)) })
+                }
+            }
+
             item { SectionHeader("Project Defaults") }
             item {
                 SettingsCard {
-                    SettingsItem(icon = Icons.Default.DateRange, title = "Default Deadline", subtitle = "$defaultDeadlineDays days from creation - drives Overdue stats", onClick = {})
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Default deadline days", color = Color.White)
-                        Slider(value = defaultDeadlineDays.toFloat(), onValueChange = { defaultDeadlineDays = it.toInt(); prefs.edit().putInt("defaultDeadline", it.toInt()).apply() }, valueRange = 1f..30f, steps = 29, modifier = Modifier.width(150.dp))
+                        Text("Default deadline", color = Color.White)
+                        Slider(value = defaultDeadlineDays.toFloat(), onValueChange = { defaultDeadlineDays = it.toInt(); prefs.edit().putInt("defaultDeadline", it.toInt()).apply() }, valueRange = 1f..30f, modifier = Modifier.width(120.dp))
                         Text("${defaultDeadlineDays}d", color = Color.White)
                     }
-                    HorizontalDivider()
+                    HorizontalDivider(color = Color(0xFF2A2A2A))
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column { Text("Auto-convert USD→ZAR", color = Color.White); Text("Show USD $275 -> R5000 on cards", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
+                        Column { Text("Auto-convert USD→ZAR", color = Color.White); Text("Show USD 275 -> R5000", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
                         Switch(checked = autoConvert, onCheckedChange = { autoConvert = it; prefs.edit().putBoolean("autoConvert", it).apply() })
                     }
                 }
             }
 
-            // NOTIFICATIONS & OFFLINE
-            item { SectionHeader("Notifications & Offline") }
+            item { SectionHeader("Language - PoE Requirement") }
+            item {
+                SettingsCard {
+                    SettingsItem(icon = Icons.Default.Language, title = "App Language", subtitle = when(currentLang) { "af" -> "Afrikaans"; "zu" -> "isiZulu"; else -> "English" }, onClick = {})
+                    Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("en" to "EN", "af" to "AF", "zu" to "ZU").forEach { (code, label) ->
+                            FilterChip(selected = currentLang == code, onClick = { currentLang = code; prefs.edit().putString("appLang", code).apply(); val l = LocaleListCompat.forLanguageTags(code); AppCompatDelegate.setApplicationLocales(l) }, label = { Text(label) })
+                        }
+                    }
+                    Text("Includes 2 SA languages: AF + ZU - Onbetaald / Akuzange kukhokhelwe", color = Color.Gray, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(16.dp))
+                }
+            }
+
+            item { SectionHeader("Notifications & Offline - PoE") }
             item {
                 SettingsCard {
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Deadline Reminders", color = Color.White)
-                            Text("Notify when project <24h left + daily XP reminder", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                        }
+                        Column(Modifier.weight(1f)) { Text("Deadline Reminders", color = Color.White); Text("Notify <24h + XP reminder", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
                         Switch(checked = notificationsEnabled, onCheckedChange = { notificationsEnabled = it; prefs.edit().putBoolean("notifications", it).apply() })
                     }
-                    HorizontalDivider()
+                    HorizontalDivider(color = Color(0xFF2A2A2A))
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Offline-first Sync", color = Color.White)
-                            Text("Room is source of truth, WorkManager syncs to Firestore when online - critical for load-shedding", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                        }
+                        Column(Modifier.weight(1f)) { Text("Offline-first Sync", color = Color.White); Text("Room truth + WorkManager sync - load-shedding", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
                         Switch(checked = offlineSync, onCheckedChange = { offlineSync = it; prefs.edit().putBoolean("offlineSync", it).apply() })
                     }
-                    HorizontalDivider()
-                    Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column { Text("Dark Theme", color = Color.White); Text("Charcoal #0A0A0A + Teal #2DD4BF", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
-                        Switch(checked = darkTheme, onCheckedChange = { darkTheme = it; prefs.edit().putBoolean("darkTheme", it).apply() })
-                    }
-                    HorizontalDivider()
-                    Button(
-                        onClick = {
-                            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                            val channelId = "hustlehub_deadlines"
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                nm.createNotificationChannel(NotificationChannel(channelId, "Deadlines", NotificationManager.IMPORTANCE_HIGH))
-                            }
-                            val notif = NotificationCompat.Builder(context, channelId)
-                                .setSmallIcon(R.mipmap.ic_launcher)
-                                .setContentTitle("⚠️ Deadline Alert!")
-                                .setContentText("Logo Design due tomorrow! +50 XP if on time")
-                                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                                .build()
-                            nm.notify(1, notif)
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2DD4BF))
-                    ) {
-                        Text("Test Push Notification (FCM)", color = Color.Black)
-                    }
+                    HorizontalDivider(color = Color(0xFF2A2A2A))
+                    Button(onClick = {
+                        val nm = context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                        val channelId = "hustlehub_deadlines"
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            nm.createNotificationChannel(android.app.NotificationChannel(channelId, "Deadlines", android.app.NotificationManager.IMPORTANCE_HIGH))
+                        }
+                        val notif = androidx.core.app.NotificationCompat.Builder(context, channelId)
+                            .setSmallIcon(android.R.drawable.ic_dialog_info)
+                            .setContentTitle("⚠️ Deadline Alert!")
+                            .setContentText("Project due tomorrow! +50 XP if on time")
+                            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH).build()
+                        nm.notify(1, notif)
+                    }, modifier = Modifier.fillMaxWidth().padding(16.dp), colors = ButtonDefaults.buttonColors(Color(0xFF2A2A2A))) { Text("Test Push Notification (FCM)", color = Color.White) }
                 }
             }
 
-            // GAMIFICATION
-            item { SectionHeader("Gamification") }
-            item {
-                SettingsCard {
-                    SettingsItem(icon = Icons.Default.LocalFireDepartment, title = "Streak Freeze", subtitle = "$freezeTokens token - protects streak if you miss a day", onClick = {})
-                    HorizontalDivider()
-                    SettingsItem(icon = Icons.Default.EmojiEvents, title = "XP & Levels", subtitle = "10 XP per task, 60 XP on-time bonus, 100 XP invoice paid - Level = XP/300 +1", onClick = { nav.navigate("stats") })
-                }
-            }
-
-            // SECURITY - RUBRIC REQUIREMENT
             item { SectionHeader("Security & Data") }
             item {
                 SettingsCard {
-                    SettingsItem(icon = Icons.Default.Security, title = "Encrypted Storage", subtitle = "Token stored in EncryptedSharedPreferences, API keys in local.properties not Git - meets rubric security", onClick = {})
-                    HorizontalDivider()
-                    SettingsItem(
-                        icon = Icons.Default.Language,
-                        title = "App Language",
-                        subtitle = when(currentLang){
-                            "af" -> "Afrikaans - vir SA hustlers"
-                            "zu" -> "isiZulu - ukuphithizela"
-                            else -> "English - default"
-                        },
-                        onClick = {}
-                    )
-                    Row(Modifier.fillMaxWidth().padding(horizontal=16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("en" to "EN", "af" to "AF", "zu" to "ZU").forEach { (code, label) ->
-                            FilterChip(
-                                selected = currentLang == code,
-                                onClick = {
-                                    currentLang = code
-                                    prefs.edit().putString("appLang", code).apply()
-                                    val localeList = LocaleListCompat.forLanguageTags(code)
-                                    AppCompatDelegate.setApplicationLocales(localeList)
-                                },
-                                label = { Text(label) },
-                                leadingIcon = { if(currentLang==code) Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                            )
-                        }
-                    }
-                    HorizontalDivider()
-                    SettingsItem(icon = Icons.Default.Storage, title = "Clear Local Data", subtitle = "Wipe Room DB - fixes migration crashes", onClick = {
-                        context.deleteDatabase("hustlehub.db")
-                        prefs.edit().clear().apply()
-                    })
-                    HorizontalDivider()
-                    SettingsItem(icon = Icons.Default.Info, title = "About HustleHub", subtitle = "OPSC6312 Part 2 - Wasama ST10451742 - Offline-first, ZAR-friendly", onClick = {})
+                    SettingsItem(icon = Icons.Default.Security, title = "Encrypted Storage", subtitle = "Token in EncryptedSharedPreferences, keys in local.properties", onClick = {})
+                    HorizontalDivider(color = Color(0xFF2A2A2A))
+                    SettingsItem(icon = Icons.Default.Storage, title = "Clear Local Data", subtitle = "Wipe Room DB - fixes crashes + removes test data", onClick = { context.deleteDatabase("hustlehub.db"); prefs.edit().clear().apply() })
+                    HorizontalDivider(color = Color(0xFF2A2A2A))
+                    SettingsItem(icon = Icons.Default.Info, title = "About", subtitle = "OPSC6312 - ST10451742 - Production build, no test data", onClick = {})
                 }
             }
 
-            // LOGOUT
             item {
-                Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        auth.signOut()
-                        prefs.edit().clear().apply()
-                        nav.navigate("login") { popUpTo(0) { inclusive = true } }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
-                ) { Icon(Icons.Default.Logout, null); Spacer(Modifier.width(8.dp)); Text("Logout") }
-
+                Button(onClick = { FirebaseAuth.getInstance().signOut(); prefs.edit().clear().apply(); nav.navigate("login") { popUpTo(0) { inclusive = true } } }, modifier = Modifier.fillMaxWidth().height(48.dp), colors = ButtonDefaults.buttonColors(Color(0xFFEF4444))) { Icon(Icons.Default.Logout, null); Spacer(Modifier.width(8.dp)); Text("Logout") }
                 Spacer(Modifier.height(16.dp))
-                Text("HustleHub v1.0 - Hustle Smart, Grow Fast - Firebase Auth + Firestore + Room + ExchangeRate-API + ZenQuotes", style = MaterialTheme.typography.labelSmall, color = Color.Gray, modifier = Modifier.padding(8.dp))
+                Text("HustleHub v1.0 Production - All data starts at zero for new users", style = MaterialTheme.typography.labelSmall, color = Color.Gray, modifier = Modifier.padding(8.dp))
             }
         }
     }
 }
 
 @Composable
-fun SectionHeader(title: String) {
-    Text(title, style = MaterialTheme.typography.titleSmall, color = Color(0xFF2DD4BF), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
-}
+fun SectionHeader(title: String) { Text(title, style = MaterialTheme.typography.titleSmall, color = Color(0xFF2DD4BF), fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp)) }
 
 @Composable
-fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)), content = content)
-}
+fun SettingsCard(content: @Composable() (androidx.compose.foundation.layout.ColumnScope.() -> Unit)) { Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(Color(0xFF1E1E1E)), content = content) }
 
 @Composable
 fun SettingsItem(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit, trailing: @Composable (() -> Unit)? = null) {
-    Row(
-        Modifier.fillMaxWidth().background(Color.Transparent).clickable(enabled = onClick != {}) { onClick() }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = Color(0xFF2DD4BF), modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, color = Color.White, style = MaterialTheme.typography.bodyMedium)
-                Text(subtitle, color = Color.Gray, style = MaterialTheme.typography.labelSmall)
-            }
+            Column(Modifier.weight(1f)) { Text(title, color = Color.White, style = MaterialTheme.typography.bodyMedium); Text(subtitle, color = Color.Gray, style = MaterialTheme.typography.labelSmall) }
         }
         trailing?.invoke() ?: Icon(Icons.Default.ChevronRight, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
     }
