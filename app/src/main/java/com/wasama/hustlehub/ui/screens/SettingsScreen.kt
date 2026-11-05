@@ -21,15 +21,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.core.app.NotificationCompat
 import coil.compose.AsyncImage
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.firestore.FirebaseFirestore
-import com.wasama.hustlehub.util.SecurePrefs
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.storage.FirebaseStorage
+import com.wasama.hustlehub.R
+import com.wasama.hustlehub.util.SecurePrefs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +77,14 @@ fun SettingsScreen(nav: NavController) {
 
     var showRateDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
+
+    val notifPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        FirebaseMessaging.getInstance().subscribeToTopic("deadlines")
+    }
 
     if (showRateDialog) {
         var tempRate by remember { mutableStateOf(hourlyRate) }
@@ -189,6 +205,27 @@ fun SettingsScreen(nav: NavController) {
                     Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column { Text("Dark Theme", color = Color.White); Text("Charcoal #0A0A0A + Teal #2DD4BF", style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
                         Switch(checked = darkTheme, onCheckedChange = { darkTheme = it; prefs.edit().putBoolean("darkTheme", it).apply() })
+                    }
+                    HorizontalDivider()
+                    Button(
+                        onClick = {
+                            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                            val channelId = "hustlehub_deadlines"
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                nm.createNotificationChannel(NotificationChannel(channelId, "Deadlines", NotificationManager.IMPORTANCE_HIGH))
+                            }
+                            val notif = NotificationCompat.Builder(context, channelId)
+                                .setSmallIcon(R.mipmap.ic_launcher)
+                                .setContentTitle("⚠️ Deadline Alert!")
+                                .setContentText("Logo Design due tomorrow! +50 XP if on time")
+                                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                                .build()
+                            nm.notify(1, notif)
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2DD4BF))
+                    ) {
+                        Text("Test Push Notification (FCM)", color = Color.Black)
                     }
                 }
             }
