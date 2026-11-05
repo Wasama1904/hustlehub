@@ -71,7 +71,17 @@ fun DashboardScreenFixed(nav: NavController) {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("HustleHub", fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0A0A0A))) },
+        topBar = {
+            TopAppBar(
+                title = { Text("HustleHub", fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = { nav.navigate("settings") }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0A0A0A))
+            )
+        },
         containerColor = Color(0xFF0A0A0A),
         floatingActionButton = {
             if (hasAnyData) {
